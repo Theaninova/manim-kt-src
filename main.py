@@ -19,8 +19,7 @@ class ListComp(Scene):
         for entry in mat:
             if highlight:
                 instantiate_highlight = SurroundingRectangle(elms(start, entry[0][0]), buff=.1)
-                self.play(ShowCreation(instantiate_highlight))
-                self.play(Uncreate(instantiate_highlight))
+                self.play(ShowCreationThenFadeOut(instantiate_highlight))
             self.play(*[TransformFromCopy(elms(start, pair[0]), elms(end, pair[1]))
                         if isinstance(pair, list) else Write(elms(end, pair)) for pair in entry])
 
@@ -107,13 +106,58 @@ class ListComp(Scene):
         self.play(Uncreate(py_list))
         return simple_py
 
-    def showPerformance(self):
-        graph = Graph
+    def show_test_results(self):
+        c_logo = SVGMobject(file_name="C-Logo.svg", stroke_width=5, stroke_opacity=.6, fill_opacity=.2, height=1)
+        c_text = Text("4300ms")
+        c_text_o = Text("1000ms")
+        java_logo = SVGMobject(file_name="Java-Logo2.svg", stroke_width=0, fill_opacity=.4, height=1)
+        java_text = Text("800ms")
+        kotlin_logo = SVGMobject(file_name="Kotlin-logo.svg", stroke_width=5, stroke_opacity=.6, fill_opacity=.2, height=1)
+        kotlin_text = Text("3500ms")
+
+        c_code = DraculaCode(file_name="code/c_code.c", language="c")
+        c_code_o = DraculaCode(file_name="code/c_code_o.c", language="c")
+        simple_kotlin = code_line("val counter = IntArray(", "5", ") {", "it", "}",
+                                  language="kotlin")
+        simple_kotlin.shift(UP*2)
+        map_kotlin = code_line("val counter =", "(0..5)", ".map", "{", "it", "}", language="kotlin")
+
+        c_logo.set_y(0).set_x(-6)
+        java_logo.set_y(1.5).set_x(-6)
+        kotlin_logo.set_y(3).set_x(-6)
+
+        # Kotlin
+        self.play(ShowCreation(kotlin_logo))
+        self.play(Write(map_kotlin))
+        self.play(map_kotlin.animate.shift(2*UP),
+                  Write(kotlin_text))
+        self.play(Transform(map_kotlin, simple_kotlin),
+                  Transform(kotlin_text, java_text))
+        self.play(map_kotlin.animate.scale(0.3).move_to(kotlin_logo, aligned_edge=LEFT).shift(1.5*RIGHT).shift(.4*DOWN),
+                  kotlin_text.animate.move_to(kotlin_logo, aligned_edge=LEFT).shift(1.5*RIGHT).shift(.2*UP))
+
+        # Java
+        self.play(ShowCreation(java_logo))
+        java_text.move_to(java_logo, aligned_edge=LEFT).shift(1.3*RIGHT)
+        self.play(TransformFromCopy(kotlin_text, java_text))
+
+        # C
+        self.play(ShowCreation(c_logo))
+        c_code.shift(2*DOWN)
+        c_code_o.shift(2*DOWN)
+        self.play(Write(c_code))
+        self.play(Write(c_text))
+        self.play(Transform(c_code, c_code_o),
+                  Transform(c_text, c_text_o))
+        self.play(c_code.animate.scale(0.2).move_to(c_logo, aligned_edge=LEFT).shift(1.4*RIGHT).shift(.4*DOWN),
+                  c_text.animate.move_to(c_logo, aligned_edge=LEFT).shift(1.4*RIGHT).shift(.2*UP))
+
+        self.play(Uncreate(kotlin_logo), Uncreate(kotlin_text), Uncreate(map_kotlin),
+                  Uncreate(java_logo), Uncreate(java_text),
+                  Uncreate(c_logo), Uncreate(c_text), Uncreate(c_code))
 
     def construct(self):
-        background = BackgroundRectangle(FullScreenRectangle(), fill_color="#282828")
-        self.add(background)
-
         simple_py = self.show_py_list_iteration()
         self.draw_py_simple_decomp(simple_py)
         self.draw_py_ktinit_decomp()
+        self.show_test_results()
